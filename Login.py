@@ -1,5 +1,27 @@
 import tkinter as tk
 from tkinter import messagebox
+import mysql.connector
+
+
+# Connect to admin database
+def connect_admin_db():
+    return mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="root",
+        database="admin"
+    )
+
+
+# Connect to student database
+def connect_student_db():
+    return mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="root",
+        database="student"
+    )
+
 
 def login():
     username = username_entry.get()
@@ -11,15 +33,32 @@ def login():
         return
 
     if user_type == "admin":
-        if username == "admin" and password == "password":
-            admin_window()
-        else:
-            messagebox.showerror("Error", "Invalid admin credentials.")
+        db = connect_admin_db()
+        query_check_user = "SELECT Username,Password FROM admin WHERE username=%s AND password=%s"
+        query_check_registration = "SELECT * FROM adminregistered WHERE username=%s"
     elif user_type == "student":
-        if username == "student" and password == "password":
+        db = connect_student_db()
+        query_check_user = "SELECT Username,Password FROM student WHERE username=%s AND password=%s"
+        query_check_registration = "SELECT * FROM studentregistered WHERE username=%s"
+
+    cursor = db.cursor()
+    cursor.execute(query_check_user, (username, password))
+    user_exists = cursor.fetchone()
+
+    cursor.execute(query_check_registration, (username,))
+    registration_exists = cursor.fetchone()
+
+    if user_exists and registration_exists:
+        if user_type == "admin":
+            admin_window()
+        elif user_type == "student":
             student_window()
-        else:
-            messagebox.showerror("Error", "Invalid student credentials.")
+    else:
+        messagebox.showerror("Error", "Invalid credentials or not registered.")
+
+    cursor.close()
+    db.close()
+
 
 def register():
     register_window = tk.Toplevel(root)
@@ -33,15 +72,18 @@ def register():
     label_font = ("TkDefaultFont", 10)
     entry_font = ("TkDefaultFont", 10)
 
-    tk.Label(frame, text="Username:", bg="light blue", fg="blue", font=label_font).grid(row=0, column=0, padx=5, pady=3, sticky="w")
+    tk.Label(frame, text="Username:", bg="light blue", fg="blue", font=label_font).grid(row=0, column=0, padx=5, pady=3,
+                                                                                        sticky="w")
     reg_username_entry = tk.Entry(frame, font=entry_font)
     reg_username_entry.grid(row=0, column=1, padx=5, pady=3, sticky="ew")
 
-    tk.Label(frame, text="Password:", bg="light blue", fg="blue", font=label_font).grid(row=1, column=0, padx=5, pady=3, sticky="w")
+    tk.Label(frame, text="Password:", bg="light blue", fg="blue", font=label_font).grid(row=1, column=0, padx=5, pady=3,
+                                                                                        sticky="w")
     reg_password_entry = tk.Entry(frame, show="*", font=entry_font)
     reg_password_entry.grid(row=1, column=1, padx=5, pady=3, sticky="ew")
 
-    tk.Label(frame, text="ConfirmPassword:", bg="light blue", fg="blue", font=label_font).grid(row=2, column=0, padx=5, pady=3, sticky="w")
+    tk.Label(frame, text="ConfirmPassword:", bg="light blue", fg="blue", font=label_font).grid(row=2, column=0, padx=5,
+                                                                                               pady=3, sticky="w")
     reg_confirm_password_entry = tk.Entry(frame, show="*", font=entry_font)
     reg_confirm_password_entry.grid(row=2, column=1, padx=5, pady=3, sticky="ew")
 
@@ -58,18 +100,38 @@ def register():
             messagebox.showerror("Error", "Passwords do not match.")
             return
 
+        user_type = user_type_var.get()
+        if user_type == "admin":
+            db = connect_admin_db()
+            query_register = "INSERT INTO adminregistered (username, password) VALUES (%s, %s)"
+        elif user_type == "student":
+            db = connect_student_db()
+            query_register = "INSERT INTO studentregistered (username, password) VALUES (%s, %s)"
+
+        cursor = db.cursor()
+        cursor.execute(query_register, (username, password))
+        db.commit()
+
         messagebox.showinfo("Success", "Registration successful!")
+        cursor.close()
+        db.close()
         register_window.destroy()
 
-    tk.Button(frame, text="Register", command=register_user, bg="green", fg="white", font=label_font).grid(row=3, column=0, columnspan=2, pady=5)
+    tk.Button(frame, text="Register", command=register_user, bg="green", fg="white", font=label_font).grid(row=3,
+                                                                                                           column=0,
+                                                                                                           columnspan=2,
+                                                                                                           pady=5)
 
     login_frame = tk.Frame(register_window, bg="light blue", padx=5, pady=5)
     login_frame.pack()
 
-    tk.Label(login_frame, text="Already have an account?", bg="light blue", fg="blue", font=label_font).pack(side="left")
-    back_to_login_button = tk.Label(login_frame, text="Sign in", bg="light blue", fg="green", cursor="hand2", font=(label_font[0], label_font[1], 'underline'))
+    tk.Label(login_frame, text="Already have an account?", bg="light blue", fg="blue", font=label_font).pack(
+        side="left")
+    back_to_login_button = tk.Label(login_frame, text="Sign in", bg="light blue", fg="green", cursor="hand2",
+                                    font=(label_font[0], label_font[1], 'underline'))
     back_to_login_button.pack(side="left")
     back_to_login_button.bind("<Button-1>", lambda e: register_window.destroy())
+
 
 def admin_window():
     admin = tk.Toplevel(root)
@@ -79,6 +141,7 @@ def admin_window():
     label_font = ("TkDefaultFont", 10)
     tk.Label(admin, text="Welcome Admin", bg="light blue", fg="blue", font=label_font).pack(expand=True)
 
+
 def student_window():
     student = tk.Toplevel(root)
     student.title("Student Window")
@@ -87,6 +150,7 @@ def student_window():
     label_font = ("TkDefaultFont", 10)
     tk.Label(student, text="Welcome Student", bg="light blue", fg="blue", font=label_font).pack(expand=True)
 
+
 def resize_and_center(window, width, height):
     window.geometry(f"{width}x{height}")
     window.resizable(False, False)
@@ -94,6 +158,7 @@ def resize_and_center(window, width, height):
     x = (window.winfo_screenwidth() - width) // 2
     y = (window.winfo_screenheight() - height) // 2
     window.geometry(f"{width}x{height}+{x}+{y}")
+
 
 root = tk.Tk()
 root.title("Online Voting System")
@@ -123,20 +188,23 @@ password_entry = tk.Entry(content_frame, show="*", font=entry_font)
 password_entry.grid(row=1, column=1, sticky="ew", padx=3, pady=3)
 
 user_type_var = tk.StringVar(value="student")
-admin_radio = tk.Radiobutton(content_frame, text="Admin", variable=user_type_var, value="admin", bg="light blue", font=label_font)
+admin_radio = tk.Radiobutton(content_frame, text="Admin", variable=user_type_var, value="admin", bg="light blue",
+                             font=label_font)
 admin_radio.grid(row=2, column=0, sticky="w", padx=3, pady=3)
-student_radio = tk.Radiobutton(content_frame, text="Student", variable=user_type_var, value="student", bg="light blue", font=label_font)
+student_radio = tk.Radiobutton(content_frame, text="Student", variable=user_type_var, value="student", bg="light blue",
+                               font=label_font)
 student_radio.grid(row=2, column=1, sticky="w", padx=3, pady=3)
 
 login_button = tk.Button(content_frame, text="Login", command=login, bg="green", fg="white", font=label_font)
 login_button.grid(row=3, column=0, columnspan=2, pady=3)
 
-register_frame = tk.Frame(root, bg="light blue", padx=8, pady=3)
+register_frame = tk.Frame(root, bg="light blue", padx=8, pady=7)
 register_frame.pack()
 
 no_account_label = tk.Label(register_frame, text="Don't have an account?", bg="light blue", fg="blue", font=label_font)
 no_account_label.pack(side="left", padx=3)
-register_button = tk.Label(register_frame, text="Sign up", bg="light blue", fg="green", cursor="hand2", font=(label_font[0], label_font[1], 'underline'))
+register_button = tk.Label(register_frame, text="Sign up", bg="light blue", fg="green", cursor="hand2",
+                           font=(label_font[0], label_font[1], 'underline'))
 register_button.pack(side="left")
 register_button.bind("<Button-1>", lambda e: register())
 
