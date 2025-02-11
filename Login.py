@@ -25,7 +25,7 @@ def register():
     register_window = tk.Toplevel(root)
     register_window.title("Register")
     register_window.configure(bg="light blue")
-    resize_and_center(register_window, 300, 200)
+    resize_and_center(register_window, 305, 205)
 
     frame = tk.Frame(register_window, bg="light blue", padx=15, pady=15)
     frame.pack(fill="both", expand=True)
@@ -67,14 +67,15 @@ def register():
     login_frame.pack()
 
     tk.Label(login_frame, text="Already have an account?", bg="light blue", fg="blue", font=label_font).pack(side="left")
-    back_to_login_button = tk.Button(login_frame, text="login", command=register_window.destroy, borderwidth=0, background="green", fg="white", font=label_font)
+    back_to_login_button = tk.Label(login_frame, text="Sign in", bg="light blue", fg="green", cursor="hand2", font=(label_font[0], label_font[1], 'underline'))
     back_to_login_button.pack(side="left")
+    back_to_login_button.bind("<Button-1>", lambda e: register_window.destroy())
 
 def admin_window():
     admin = tk.Toplevel(root)
     admin.title("Admin Window")
     admin.configure(bg="light blue")
-    resize_and_center(admin, 300, 250)
+    resize_and_center(admin, 305, 255)
     label_font = ("TkDefaultFont", 10)
     tk.Label(admin, text="Welcome Admin", bg="light blue", fg="blue", font=label_font).pack(expand=True)
 
@@ -82,7 +83,7 @@ def student_window():
     student = tk.Toplevel(root)
     student.title("Student Window")
     student.configure(bg="light blue")
-    resize_and_center(student, 300, 250)
+    resize_and_center(student, 305, 255)
     label_font = ("TkDefaultFont", 10)
     tk.Label(student, text="Welcome Student", bg="light blue", fg="blue", font=label_font).pack(expand=True)
 
@@ -97,7 +98,7 @@ def resize_and_center(window, width, height):
 root = tk.Tk()
 root.title("Online Voting System")
 root.configure(bg="light blue")
-resize_and_center(root, 250, 200)
+resize_and_center(root, 255, 205)
 
 top_frame = tk.Frame(root, bg="blue", height=40)
 top_frame.pack(fill="x")
@@ -135,7 +136,8 @@ register_frame.pack()
 
 no_account_label = tk.Label(register_frame, text="Don't have an account?", bg="light blue", fg="blue", font=label_font)
 no_account_label.pack(side="left", padx=3)
-register_button = tk.Button(register_frame, text="register", command=register, borderwidth=0, background="green", fg="white", font=label_font)
+register_button = tk.Label(register_frame, text="Sign up", bg="light blue", fg="green", cursor="hand2", font=(label_font[0], label_font[1], 'underline'))
 register_button.pack(side="left")
+register_button.bind("<Button-1>", lambda e: register())
 
 root.mainloop()
